@@ -1,4 +1,0 @@
-19/06/2026
-- Unificación de los códigos de los sensores en uno sólo para recepción simultánea de los sensores
-- Mediciones del YL-69 en macetas, cumpliendo los mismos datos obtenidos con aire-vaso con agua
-- 
