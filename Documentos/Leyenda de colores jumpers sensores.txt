@@ -1,0 +1,14 @@
+Adaptadores (LM393):
+La conexión entre los sensores YL-69 y el raindrop sensor, con su respectivo LM393 se hace con cables negros y blancos para ambos. Siendo el cable blanco el positivo y el cable negro el negativo.
+
+VCC/+/Alimentación:
+- Rojos
+- Naranjas
+
+GND/-/Tierra:
+- Marrones
+- Grises
+
+A0/D0/Datos:
+- Azules
+- Morados

@@ -1,0 +1,137 @@
+Yo empezaría de la forma en la que se desarrollan muchos proyectos de ingeniería: de lo más simple a lo más complejo, construyendo pequeñas etapas que funcionen por sí mismas. Eso evita frustrarte y además te da muchísimo material para documentar.
+
+# Fase 0: Define el proyecto
+Antes de tocar un cable, escribe algo tan simple como:
+> **Objetivo:** Diseñar un sistema IoT capaz de monitorear las condiciones ambientales de un huerto y visualizar los datos en tiempo real.
+
+Y define las variables:
+* Temperatura del aire.
+* Humedad del aire.
+* Humedad del suelo.
+
+
+
+# Fase 1: Hacer que los sensores funcionen
+Todavía no pienses en WiFi ni en servidores. Tu primer objetivo es:
+> "¿Puedo leer correctamente los sensores?"
+## Hardware
+## Programa
+## ¿Qué aprenderías aquí?
+
+* GPIO.
+* Entradas analógicas.
+* Librerías.
+* Conversión de datos.
+* Calibración de sensores.
+
+
+
+# Fase 2: Entender bien la funcionalidad de todos los sensores
+Esta fase es MUY importante y mucha gente se la salta. Haz experimentos (Sensor al aire, en tierra húmeda, seca, etc.). Calibración de los sensores, estudio de su comportamiento y demás. Eso es ingeniería.
+
+
+
+# Fase 3: Hacer un sistema local
+Ya no usarías solamente el monitor serial. Podrías conectar un LED.
+
+Por ejemplo:
+🟢 humedad suficiente
+🔴 suelo seco
+
+
+
+# Fase 4: Aprender WiFi con el ESP32
+Antes de enviar datos al Raspberry, simplemente prueba: ESP32 → WiFi de la casa
+
+Y en el serial:
+Conectado.
+IP: 192.168.X.X
+Este paso es pequeñito, pero es enorme porque aquí empieza la parte IoT.
+
+
+
+# Fase 5: Servidor web en el ESP32
+Haz que el ESP32 abra una pequeña página. Por ejemplo:
+http://192.168.X.X
+
+y que muestre:
+Temperatura: 25°C
+Humedad: 62%
+Suelo: 45%
+
+Ya tendrías un sistema IoT básico.
+
+
+
+# Fase 6: Empezar a usar la Raspberry
+Aquí es donde se pone muy interesante. La Raspberry podría ejecutar:
+* Python
+* Flask
+* Base de datos
+
+El ESP32 enviaría algo como:
+```json
+{
+  "temperatura":24.8,
+  "humedad":63,
+  "suelo":48
+}
+
+
+
+# Fase 7: Guardar datos
+Cada lectura:
+Hora      Temp      Humedad      Suelo
+10:00     24.1      62           49
+10:01     24.2      63           48
+10:02     24.2      63           47
+
+Aquí ya estás haciendo adquisición de datos.
+
+
+
+
+# Fase 8: Graficar
+Por ejemplo:
+* Temperatura vs tiempo.
+* Humedad del suelo vs tiempo.
+
+Aquí empiezas a obtener información útil:
+> ¿Cuánto tarda en secarse la tierra?
+> ¿A qué hora hace más calor?
+> ¿Cada cuánto necesita agua la planta?
+
+
+
+# Fase 9: Alertas y predicción
+
+Si:
+Humedad < 20%
+
+entonces:
+⚠️ La planta necesita riego.
+
+Incluso podrías:
+* encender un LED;
+* mandar un correo;
+* enviar una notificación.
+
+Después de varios días de datos podrías hasta hacer:
+> Predicción de cuándo la planta necesitará agua.
+
+Eso ya toca:
+* análisis de datos;
+* estadística;
+* machine learning básico.
+
+
+
+# Y MUY IMPORTANTE: documenta desde el día 1
+
+Y toma fotos de TODO:
+* montaje en protoboard;
+* conexiones;
+* pruebas;
+* errores;
+* gráficas;
+* resultados.
