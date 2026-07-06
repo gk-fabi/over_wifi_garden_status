@@ -1,13 +1,10 @@
-//Librerías y definición de pines para los sensores
+//Librerías, pines y credenciales WiFi
 #include "DHT.h"
 #include "ESP8266WiFi.h"
 #include "webpage.h"
 #define yl_pin A0
 #define dht_pin 14
 #define raindrop_pin 5
-
-
-//Credenciales WiFi
 const char* ssid = "ASTRID G";
 const char* wifi_password = "82330693";
 
@@ -29,20 +26,27 @@ String is_raining(bool rain_reading){
 
 //Preparación página HTML
 String prepareHTML(float temp, float air, float soil, float rain){
-  String page = "<!DOCTYPE html><html><head><meta charset='UTF-8'><meta http-equiv='refresh' content='5'><title>Garden Status</title></head><body>";
-  page += "<h1>Garden Status</h1>";
-  page += "<p>Temperatura: ";
-  page += String(temp, 1);
-  page += " °C</p>";
-  page += "<p>Humedad del aire: ";
-  page += String(air, 1);
-  page += " %</p>";
-  page += "<p>Humedad de la tierra: ";
-  page += String(soil);
-  page += " %</p>";
-  page += "<p>¿Está lloviendo?: ";
-  page += is_raining(rain);
-  page += "</p></body></html>";
+  String page = F(R"rawliteral(
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta http-equiv="refresh" content="5">
+      <title>Garden Status</title>
+    </head>
+    <body>
+      <h1>Garden Status</h1>
+      <p>Temperatura: %TEMPERATURE%°C</p>
+      <p>Humedad del aire: %AIR_HUMIDITY%%</p>
+      <p>Humedad de la tierra: %SOIL_HUMIDITY%%</p>
+      <p>¿Está lloviendo?: %RAINING%</p>
+    </body>
+    </html>
+  )rawliteral");
+  page.replace("%TEMPERATURE%", String(temp));
+  page.replace("%AIR_HUMIDITY%", String(air));
+  page.replace("%SOIL_HUMIDITY%", String(soil));
+  page.replace("%RAINING%", is_raining(rain));
   return page;
 }
 
@@ -50,14 +54,14 @@ String prepareHTML(float temp, float air, float soil, float rain){
 void setup(){
   Serial.begin(115200);
   delay(500);
+  
 
+  //Modos, sensores e inicializaciones
   WiFi.mode(WIFI_STA);
-
-  //Configuración de pines e inicialización de DHT11
   pinMode(yl_pin, INPUT);
   pinMode(raindrop_pin, INPUT);
   dht.begin();
-  Serial.println(F("\n¡Configuración de pines e inicialización de sensores de manera exitosa!"));
+
 
   //Conexión WiFi e inicialización del server
   Serial.printf("Conectándose a la red WiFi \"%s\"", ssid);
@@ -89,12 +93,9 @@ void loop(){
   //Web server request
   WiFiClient client = server.available();
   if(client){
-    Serial.println(F("Cliente conectado al servidor web"));
-
     while(client.connected() && !client.available()){
       delay(1);
     }
-
     while(client.available()){
       client.read();
     }
@@ -106,7 +107,6 @@ void loop(){
     client.print(prepareHTML(dht.readTemperature(), dht.readHumidity(), map(analogRead(yl_pin), 1024, 260, 0, 100), digitalRead(raindrop_pin)));
     client.flush();
     client.stop();
-    Serial.println(F("Página web enviada al cliente"));
   }
   
 
