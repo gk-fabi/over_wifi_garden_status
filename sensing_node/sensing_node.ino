@@ -1,31 +1,46 @@
-//Librerías, pines y credenciales WiFi
+//----------Librerías, pines y credenciales WiFi----------
 #include "DHT.h"
 #include "ESP8266WiFi.h"
-#include "webpage.h"
 #define yl_pin A0
 #define dht_pin 14
 #define raindrop_pin 5
 const char* ssid = "ASTRID G";
 const char* wifi_password = "82330693";
 
-
-//Creación de objetos
+//----------Creación de objetos y variables----------
 DHT dht(dht_pin, DHT11);
 WiFiServer server(80);
+struct SensorsData{
+  float air_humidity;
+  float temperature;
+  int soil_humidity;
+  int soil_percent;
+  bool rain_status;
+};
 
+//----------Leer sensores----------
+SensorsData readSensors(){
+  SensorsData data;
 
-//¿Está lloviendo? (Función)
-String is_raining(bool rain_reading){
-  if(!rain_reading){
-    return "Sí";
-  } else {
-    return "No";
-  }
+  data.air_humidity = dht.readHumidity();
+  data.temperature = dht.readTemperature();
+  
+  data.soil_humidity = analogRead(yl_pin);
+  data.soil_percent = map(data.soil_humidity, 1024, 260, 0, 100);
+  //data.soil_percent = constrain(data.soil_percent, 0, 100); (Esta linea es para que los valores no salgan de 0-100%. Descomentarla cuando haya una excelente calibración)
+  
+  data.rain_status = digitalRead(raindrop_pin);
+
+  return data;
 }
 
+//----------¿Está lloviendo?----------
+String is_raining(bool rain_reading){
+  return !rain_reading ? "Sí" : "No";
+}
 
-//Preparación página HTML
-String prepareHTML(float temp, float air, float soil, float rain){
+//----------Preparación página HTML----------
+String prepareHTML(const SensorsData& data){
   String page = F(R"rawliteral(
     <!DOCTYPE html>
     <html>
@@ -43,27 +58,48 @@ String prepareHTML(float temp, float air, float soil, float rain){
     </body>
     </html>
   )rawliteral");
-  page.replace("%TEMPERATURE%", String(temp));
-  page.replace("%AIR_HUMIDITY%", String(air));
-  page.replace("%SOIL_HUMIDITY%", String(soil));
-  page.replace("%RAINING%", is_raining(rain));
+
+  page.replace("%TEMPERATURE%", String(data.temperature));
+  page.replace("%AIR_HUMIDITY%", String(data.air_humidity));
+  page.replace("%SOIL_HUMIDITY%", String(data.soil_percent));
+  page.replace("%RAINING%", is_raining(data.rain_status));
+
   return page;
 }
 
+//----------Conexión y solicitud web----------
+void handleWebClient(){
+  WiFiClient client = server.available();
+  if(client){
+    while(client.connected() && !client.available()){
+      delay(1);
+    }
+    while(client.available()){
+      client.read();
+    }
+    SensorsData sensors = readSensors();
+
+    client.println("HTTP/1.1 200 OK");
+    client.println("Content-Type: text/html");
+    client.println("Connection: close");
+    client.println();
+
+    client.print(prepareHTML(sensors));
+    client.flush();
+    client.stop();
+  }
+}
 
 void setup(){
   Serial.begin(115200);
-  delay(500);
   
-
-  //Modos, sensores e inicializaciones
+  //----------Modos, sensores e inicializaciones----------
   WiFi.mode(WIFI_STA);
   pinMode(yl_pin, INPUT);
   pinMode(raindrop_pin, INPUT);
   dht.begin();
 
-
-  //Conexión WiFi e inicialización del server
+  //----------Conexión WiFi e inicialización del server----------
   Serial.printf("Conectándose a la red WiFi \"%s\"", ssid);
   WiFi.begin(ssid, wifi_password);
   while(WiFi.status() != WL_CONNECTED){
@@ -76,61 +112,6 @@ void setup(){
   server.begin();
 }
 
-
-
-
-
 void loop(){
-  //Variables que albergan datos leídos
-  float air_humidity = dht.readHumidity();
-  float temperature = dht.readTemperature();
-  int soil_humidity = analogRead(yl_pin);
-  int soil_percent = map(soil_humidity, 1024, 260, 0, 100);
-  // soil_percent = constrain(soil_percent, 0, 100); (Esta linea es para que los valores no salgan de 0-100%. Descomentarla cuando haya una excelente calibración)
-  bool rain_status = digitalRead(raindrop_pin);
-  
-
-  //Web server request
-  WiFiClient client = server.available();
-  if(client){
-    while(client.connected() && !client.available()){
-      delay(1);
-    }
-    while(client.available()){
-      client.read();
-    }
-
-    client.println("HTTP/1.1 200 OK");
-    client.println("Content-Type: text/html");
-    client.println("Connection: close");
-    client.println();
-    client.print(prepareHTML(dht.readTemperature(), dht.readHumidity(), map(analogRead(yl_pin), 1024, 260, 0, 100), digitalRead(raindrop_pin)));
-    client.flush();
-    client.stop();
-  }
-  
-
-  //Lectura YL-69
-  Serial.print("Humedad en la tierra: ");
-  Serial.print(soil_percent);
-  Serial.println("%");
-
-  //Lectura DHT11
-  Serial.print("Temperatura ");
-  Serial.print(temperature);
-  Serial.println("°C ");
-  Serial.print("Humedad en el aire: ");
-  Serial.print(air_humidity);
-  Serial.println("%");
-
-  //Lectura raindrop
-  Serial.print("¿Está lloviendo?: ");
-  if(!rain_status){
-    Serial.println("Sí");
-  } else {
-    Serial.println("No");
-  }
-
-  Serial.println("");
-  delay(3000);
+  handleWebClient();
 }
